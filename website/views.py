@@ -1,7 +1,7 @@
 from flask import Blueprint,render_template,request,redirect,url_for
-from .models import Users
+from .models import Users,Posts
 from werkzeug.security import generate_password_hash,check_password_hash
-from flask_login import login_required,login_user,logout_user
+from flask_login import login_required,login_user,logout_user,current_user
 from . import db
 views=Blueprint('views',__name__)
 
@@ -57,8 +57,21 @@ def login():
 @login_required
 @views.route('/posts')
 def posts():
-    return '<h1>Welcome to POST</h1>'
+    posts=Posts.query.all()
 
+    return render_template('posts.html',posts=posts)
+
+@login_required
+@views.route('/create-post',methods=['GET','POST'])
+def create_post():
+    if request.method == "POST":
+        link=request.form.get('link')
+        desc = request.form.get('desc')
+        data = Posts(by=current_user.username,desc=desc,link=link)
+        db.session.add(data)
+        db.session.commit()
+        return redirect(url_for('views.posts'))
+    return render_template('createpost.html')
 
 @login_required
 @views.route('/logout')
