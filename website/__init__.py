@@ -2,36 +2,37 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from os import path
-db=SQLAlchemy()
+from flask_socketio import SocketIO
+
+db = SQLAlchemy()
+socketio = SocketIO()
 
 def createapp():
-    #initializing app
-    app=Flask(__name__)
-
-    #congigurations
-    app.config['SECRET_KEY']='Hello'
+    #Initializing the app
+    app = Flask(__name__)
+    app.config['SECRET_KEY']='hello'
     app.config['SQLALCHEMY_DATABASE_URI']='sqlite:///database.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS']=False
-
-    #DB settup
     db.init_app(app)
-    loginmaneger=LoginManager(app)
-    loginmaneger.login_view='/'
+    loginmanager = LoginManager(app)
+    loginmanager.login_view = '/'
+    socketio.init_app(app)
 
-    # creating models
+    #Making the routes
+    from .views import views
+    app.register_blueprint(views, url_prefix='/')
+
     from .models import Users
-    createdatabse(app)
-    @loginmaneger.user_loader
+    createdatabase(app)
+
+    @loginmanager.user_loader
     def userloader(id):
         return Users.query.filter_by(id=int(id)).first()
 
+    #Returning the app
+    return socketio, app
 
-    #loading all the routes
-    from .views import views
-    app.register_blueprint(views,url_prefix='/')
-    # return app
-    return app
-
-def createdatabse(app):
-    if not path.exists('website/database.db'):
+def createdatabase(app):
+    if not path.exists("website/database.db"):
         db.create_all(app=app)
+        print('Created')
